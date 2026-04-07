@@ -1,31 +1,51 @@
 async function getWeather() {
-  const city = document.querySelector("input").value;
+  const city = document.getElementById("city").value;
 
-  // Step 1: Get coordinates
-  const geoRes = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${city}`
-  );
-  const geoData = await geoRes.json();
-
-  if (!geoData.results) {
-    alert("City not found");
+  if (!city) {
+    document.getElementById("error").innerText = "Enter city name";
     return;
   }
 
-  const lat = geoData.results[0].latitude;
-  const lon = geoData.results[0].longitude;
+  try {
+    // loader show
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("error").innerText = "";
 
-  // Step 2: Get weather
-  const weatherRes = await fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
-  );
-  const weatherData = await weatherRes.json();
+    // Step 1: get coordinates
+    const geoRes = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${city}`
+    );
+    const geoData = await geoRes.json();
 
-  console.log(weatherData);
+    if (!geoData.results) {
+      document.getElementById("error").innerText = "City not found";
+      document.getElementById("loader").style.display = "none";
+      return;
+    }
 
-  // Step 3: Show result
-  document.querySelector(".result").innerHTML = `
-    Temperature: ${weatherData.current_weather.temperature}°C <br>
-    Wind Speed: ${weatherData.current_weather.windspeed} km/h
-  `;
+    const lat = geoData.results[0].latitude;
+    const lon = geoData.results[0].longitude;
+
+    // Step 2: get weather
+    const weatherRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+    );
+    const data = await weatherRes.json();
+
+    // show data
+    document.getElementById("cityName").innerText = city;
+    document.getElementById("temp").innerText = data.current_weather.temperature;
+    document.getElementById("wind").innerText = data.current_weather.windspeed;
+    document.getElementById("humidity").innerText = "--"; // open-meteo no humidity here
+
+    document.getElementById("weatherCard").style.display = "block";
+
+    // hide loader
+    document.getElementById("loader").style.display = "none";
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById("error").innerText = "Something went wrong";
+    document.getElementById("loader").style.display = "none";
+  }
 }
